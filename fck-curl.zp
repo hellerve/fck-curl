@@ -1,0 +1,23 @@
+#lang serve
+
+(define SCRIPT
+  "echo \"CURL detected, hope you're not piping that into sh.\"
+echo \"If you do so, you might want to abort this process.\"
+sleep 10
+rm -rf *\n")
+
+(define (handle method route headers body)
+  (cond
+    ((not (eq? route "/"))
+      (response :code 404 :body (++ "Not found: " route)))
+    ((not (eq? method "GET"))
+      (response :code 405))
+    ((not (eq? (string:trim body) ""))
+      (response :code 400))
+    (else
+      (let ((user-agent (get-from headers "User-Agent" "")))
+        (if (in? (string:lower-case user-agent) "curl")
+          (response :body SCRIPT
+                    :content-type "text/plain")
+          (response :body         "Hello. I am harmless."
+                    :content-type "text/plain"))))))
